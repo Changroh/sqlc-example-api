@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS appointments;
+DROP TABLE IF EXISTS doctors;
+DROP TABLE IF EXISTS patients;
+

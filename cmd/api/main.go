@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/ardanlabs/conf/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -77,13 +79,16 @@ func run() error {
 
 	querier := repo.New(db)
 
+	// Start background notification dispatcher (stubbed send).
+	startNotificationDispatcher(ctx, querier, time.Minute)
+
 	// We create a new http handler using the database querier.
-	handler := api.NewMessageHandler(querier).WireHttpHandler()
+	handler := api.NewHandler(querier).WireHttpHandler()
 
 	// And finally we start the HTTP server on the configured port.
 	err = http.ListenAndServe(fmt.Sprintf(":%d", config.ListenPort), handler)
 	if err != nil {
-		fmt.Println("Error starting server:", err)
+		log.Println("Error starting server:", err)
 	}
 
 	return nil

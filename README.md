@@ -1,32 +1,86 @@
-# sqlc-example-api
+# Healthcare Appointment & Telemedicine API
 
-This repository provides starter code for creating a API using sqlc and the Gin web framework in Go. This is part of the Relational Database course as part of the Iknite Space training.
+This service manages patients, doctors, appointments, and schedules outbound notifications (SMS/email stubs). It uses Go, Gin, PostgreSQL, and sqlc-generated data access.
 
+## Project Structure
+- `api/`: HTTP handlers and routing.
+- `cmd/api/`: Application entrypoint, config loading, migrations, background notification dispatcher.
+- `db/migrations`: Database schema (patients, doctors, appointments, notifications).
+- `db/query`: SQL used by sqlc to generate type-safe Go code.
+- `db/repo`: Generated sqlc code (do not edit).
 
-Project Structure
+## Prerequisites
+- Go 1.23+
+- PostgreSQL
+- `.env` populated (see below)
 
-* `api/`: Contains API route definitions and handler functions. You will need to edit this file, if you want to add or modify the apit endpoints.
-* `cmd/api/`: Houses the main application entry point. You shouldn't need to edit any files in this directory.
-* `db/migrations`: Contains sql files that create/update the database schema (tables and columns) used by the api. If you need to update the database schema make your changes here.
-* `db/query`: This folder contains SQL query files. These files define the database queries used by the application, which are processed by sqlc to generate type-safe Go code for interacting with the database.
-`db/repo/`: This directory contains repository code that acts as an abstraction layer between the database and the application logic. It provides functions to interact with the database using the generated sqlc code. You shouldn't need to edit any files in this directory.
+## Env vars (`.env`)
+```
+LISTEN_PORT=8085
+MIGRATIONS_PATH=./db/migrations
+DB_USER=postgres
+DB_PASSWORD=yourpassword
+DB_HOST=localhost
+DB_PORT=5432
+DB_Name=messages   # or your DB name
+DB_TLS_DISABLED=true
 
-# Getting Started
-* Fork the repository into your own github account.
-* Clone the Repository:
-`git clone https://github.com/YOUR-GITHUB-USERNAME/sqlc-example-api.git`
-cd sqlc-example-api
-* Set Up Environment Variables:
-    * Create a new database for use with this project.
-    * Copy the .env.example file to .env and configure the necessary environment variables, such as database connection details.
-* Install Dependencies:
-    * Ensure you have Go installed. Then, install the required Go modules:
-    `go mod tidy`
-* Generate Code with sqlc:
-    * If you make any changes to `db/query` or `db/migrations`, then you need to re-generate the go code in `db/repo`
-            `go generate ./...`
-    * This command will generate Go code based on the SQL queries defined in the db/queries/ directory.
-* Run the Application:
-    `go run cmd/api/...`
+# Notification providers (currently stubbed; add when wiring Twilio/SendGrid)
+# TWILIO_ACCOUNT_SID=...
+# TWILIO_AUTH_TOKEN=...
+# TWILIO_FROM_NUMBER=...
+# SENDGRID_API_KEY=...
+# EMAIL_FROM=noreply@example.com
+```
 
-    The server will start, and it will print the available endpoints.
+## Install deps
+```
+go mod tidy
+```
+
+## Generate sqlc code (when queries/migrations change)
+```
+go generate ./...
+```
+
+## Run the API (applies migrations automatically)
+```
+go run ./cmd/api
+```
+Server listens on `LISTEN_PORT` (default 8085).
+
+## REST Endpoints
+- `POST /patients` — create patient
+- `POST /doctors` — create doctor
+- `POST /appointments` — create appointment (future time_slot, unique per doctor/time)
+- `GET /patients/:id/appointments?from&to&status&limit&offset` — list patient appointments
+- `GET /doctors/:specialty/schedule?from&to` — list booked slots for doctors in a specialty
+
+## Example requests (curl)
+```bash
+# Create patient
+curl -X POST http://localhost:8085/patients \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","phone":"+123","email":"john@example.com","medical_id":"MID-1"}'
+
+# Create doctor
+curl -X POST http://localhost:8085/doctors \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Dr Smith","specialty":"cardiology","contact":"+456"}'
+
+# Create appointment (use returned UUIDs)
+curl -X POST http://localhost:8085/appointments \
+  -H "Content-Type: application/json" \
+  -d '{"patient_id":"<patient_uuid>","doctor_id":"<doctor_uuid>","time_slot":"2025-12-12T10:00:00Z","notes":"checkup"}'
+
+# List patient appointments
+curl "http://localhost:8085/patients/<patient_uuid>/appointments"
+
+# Doctor schedule by specialty
+curl "http://localhost:8085/doctors/cardiology/schedule"
+```
+
+## Notifications
+A background dispatcher polls `notifications` and marks them sent/failed. SMS/Email sending is stubbed; wire Twilio/SendGrid using the env vars above. Appointments enqueue:
+- SMS confirmation at +1 minute
+- Email reminder at -24h (or immediately if the window has passed)

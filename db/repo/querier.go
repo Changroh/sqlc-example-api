@@ -6,12 +6,26 @@ package repo
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
+	CreateAppointment(ctx context.Context, arg CreateAppointmentParams) (Appointment, error)
+	CreateDoctor(ctx context.Context, arg CreateDoctorParams) (Doctor, error)
 	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
+	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
+	CreatePatient(ctx context.Context, arg CreatePatientParams) (Patient, error)
+	GetDoctorByID(ctx context.Context, id uuid.UUID) (Doctor, error)
+	GetDoctorScheduleBySpecialty(ctx context.Context, arg GetDoctorScheduleBySpecialtyParams) ([]Appointment, error)
 	GetMessageByID(ctx context.Context, id string) (Message, error)
 	GetMessagesByThread(ctx context.Context, thread string) ([]Message, error)
+	GetPatientAppointments(ctx context.Context, arg GetPatientAppointmentsParams) ([]Appointment, error)
+	GetPatientByID(ctx context.Context, id uuid.UUID) (Patient, error)
+	ListDueNotifications(ctx context.Context) ([]Notification, error)
+	MarkNotificationFailed(ctx context.Context, arg MarkNotificationFailedParams) error
+	MarkNotificationSent(ctx context.Context, id uuid.UUID) error
+	UpdateAppointmentStatus(ctx context.Context, arg UpdateAppointmentStatusParams) (Appointment, error)
 }
 
 var _ Querier = (*Queries)(nil)

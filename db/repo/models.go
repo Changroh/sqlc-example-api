@@ -5,8 +5,31 @@
 package repo
 
 import (
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Appointment struct {
+	ID        uuid.UUID `json:"id"`
+	PatientID uuid.UUID `json:"patient_id"`
+	DoctorID  uuid.UUID `json:"doctor_id"`
+	TimeSlot  time.Time `json:"time_slot"`
+	Status    string    `json:"status"`
+	Notes     string    `json:"notes"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Doctor struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Specialty string    `json:"specialty"`
+	Contact   string    `json:"contact"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
 type Message struct {
 	ID        string           `json:"id"`
@@ -14,4 +37,25 @@ type Message struct {
 	Sender    string           `json:"sender"`
 	Content   string           `json:"content"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
+type Notification struct {
+	ID            uuid.UUID `json:"id"`
+	AppointmentID uuid.UUID `json:"appointment_id"`
+	Type          string    `json:"type"`
+	SendAt        time.Time `json:"send_at"`
+	Status        string    `json:"status"`
+	Attempts      int32     `json:"attempts"`
+	LastError     string    `json:"last_error"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+type Patient struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Phone     string    `json:"phone"`
+	Email     string    `json:"email"`
+	MedicalID string    `json:"medical_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
